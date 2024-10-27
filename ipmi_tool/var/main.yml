@@ -1,0 +1,15 @@
+---
+# vars file for ipmitool
+ipmitool_users:
+  root:
+    id: 2
+    name: root
+    password: easy_password
+  ansible:
+    id: 3
+    name: ansible
+    password: easy_password
+  dsol:
+    id: 4
+    name: dsol
+    password: easy_password
