@@ -1,0 +1,125 @@
+---
+#################################################################### 
+#  Install, config impitool and get some data
+
+# Check installed and updated
+- name: Ensure ipmitool is installed and updated
+  ansible.builtin.apt:
+    pkg:
+    - ipmitool
+    - vim
+    state: latest
+    update_cache: yes
+    cache_valid_time: "{{ apt_update_cache_valid_time | default(3600) }}"
+  become: yes
+
+- name: Ensure kernel modules are loaded
+  modprobe: name={{ item }} state=present
+  with_items:
+    - ipmi_si
+    - ipmi_devintf
+  become: yes   
+
+- name: Get ipmitool power status
+  command: ipmitool power status
+  become: yes
+
+- name: Ensure users ipmitool user list 1
+  command: ipmitool user list 1
+  become: yes
+  register: ipmitool_active_users
+  failed_when: ipmitool_active_users.failed
+
+- debug:
+    msg: "KEY: {{ item.key }}, VALUE: {{ item.value }}"
+  loop: "{{ ipmitool_users | dict2items }}"
+
+- name: Ensure users are created
+  command: ipmitool user set name {{ item.value.id }} {{ item.key }}
+  with_dict: "{{ ipmitool_users }}"
+  become: yes
+  register: user_check
+  failed_when: user_check.failed
+  when: "'YOUR_USER' not in ipmitool_active_users"
+
+
+- name: Update password user settings ipmi
+  command: ipmitool user set password {{ item.value.id }} {{ item.value.password }}
+  with_dict: "{{ ipmitool_users }}"
+  become: yes
+
+
+- name: Channel setaccess ipmi
+  command: ipmitool channel setaccess 1 {{ item.value.id }} callin=on ipmi=on link=on callin=on privilege=4
+  with_dict: "{{ ipmitool_users }}"
+  become: yes
+
+- name: lan print
+  shell: ipmitool lan print 1
+  become: yes
+  register: lan_print_1
+
+- debug: msg="The lan_print_1 variable output is {{ lan_print_1 }}"
+
+- name: ipmitool lan set 1 ipsrc static
+  shell: ipmitool lan set 1 ipsrc static
+  when: "'Static Address' not in lan_print_1.stdout"
+  become: yes
+
+- name: lan set ipmitool lan set 1 IPv4 {{ ilo_ssh_host }}
+  shell: ipmitool lan set 1 ipaddr {{ ilo_ssh_host }}
+  when: "ilo_ssh_host not in lan_print_1.stdout"
+  become: yes
+
+- name: lan set ipmitool netmask
+  shell: ipmitool lan set 1 netmask {{ netmask }}
+  when: "netmask not in lan_print_1.stdout"
+  become: yes
+
+- name: lan set access on
+  shell: ipmitool lan set 1 access on
+  become: yes
+
+- name: lan set ipmitool Gateway
+  shell: ipmitool lan set 1 defgw ipaddr {{ gw }}
+  when: "gw not in lan_print_1.stdout"
+  become: yes
+
+- name: ipmitool bmc reset cold
+  shell: ipmitool bmc reset cold
+  when: "ilo_ssh_host not in lan_print_1.stdout"
+  become: yes
+
+- name: Check for firmware upgrades for HPE hardware
+  shell: dmidecode |grep upgradeable
+  become: yes
+
+- name: Get BIOS Revision HPE hardware
+  shell: dmidecode |grep "BIOS Revision"
+  become: yes
+
+- name: Get Firmware Revision HPE hardware *dmidecode*
+  shell: dmidecode |grep "Firmware Revision"
+  become: yes
+
+- name: Get Firmware release date 
+  shell: dmidecode |grep "Release Date"
+  become: yes
+
+- name: Check for Firmware version
+  shell: dmidecode |grep Version
+  become: yes
+
+# Get BMC IP's
+- name: Get BMC IP's
+  shell: ipmitool lan print  | grep "IP Address"
+  become: yes
+
+# Get BMC IP's
+- name: Get BMC Firmware version from *ipmitool*
+  shell: ipmitool mc info |grep Firmware
+  become: yes
+
+- name: Get hardware type
+  shell: ipmitool fru print |grep "Product Name" | sort 
+  become: yes
