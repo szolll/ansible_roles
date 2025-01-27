@@ -1,0 +1,72 @@
+---
+################################################################
+###
+##   Role description: 
+##     The main objective for this role is
+##
+##   Usage:
+##
+##   Author: Daniel Sol
+##
+##   Version:
+##     0.1b
+###
+#################################################################
+#
+
+# Find the root user
+- name: Determine Checkmk Agent User
+  command: stat -c '%U' /usr/bin/check_mk_agent
+  register: checkmk_agent_user
+  changed_when: false
+
+- name: Debug checkmk_agent_user
+  debug:
+    var: checkmk_agent_user.stdout
+
+# Find root group
+- name: Dynamically determine the group for log file access based on the system
+  shell: |
+    if getent group admins1 &> /dev/null; then
+      printf "\n"
+    elif getent group sudo &> /dev/null; then
+      printf "\n"
+    else
+      echo "none"
+    fi
+  register: log_file_access_group
+  changed_when: false
+  ignore_errors: true
+
+# Ensure plugin directory excists
+- name: Ensure Checkmk agent plugin directory excists
+  ansible.builtin.file:
+    path: "{{ checkmk_agent_plugin_dir }}"
+    state: directory
+    mode: '0755'
+  become: True
+
+# Ensure plugin config directory
+- name: Ensure Checkmk agent configuration directory excists
+  ansible.builtin.file:
+    path: "{{ checkmk_agent_conf_dir }}"
+    state: directory
+    mode: '0755'
+  become: True
+
+# Copy plugin
+- name: Ensure we've copyed the plugin to target
+  ansible.builtin.copy:
+    src: "{{ checkmk_agent_plugin_name }}"
+    dest: "{{ checkmk_agent_plugin_dir }}{{ checkmk_agent_plugin_name }}"
+    mode: '0755'
+  become: True
+
+# Set permissions
+- name: Ensure proper ownership of the plugin
+  file:
+    path: "{{ checkmk_agent_plugin_dir }}/{{ checkmk_agent_plugin_name }}"
+    owner: "{{ checkmk_agent_user.stdout }}"
+    group: "{{ checkmk_agent_user.stdout }}"
+    mode: '0755'
+  become: true

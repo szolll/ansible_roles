@@ -1,0 +1,10 @@
+---
+################################################################
+###
+##   Role description: 
+##     The main objective for this role is to install the smartmontools package and 
+##     copy the checkmk smartmonitor plugin to the checkmk agent plugin directory.
+##
+##   Author: Daniel Sol
+###
+#################################################################
