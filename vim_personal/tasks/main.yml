@@ -1,0 +1,18 @@
+---
+# Author: Daniel Sol
+# Date: 2024-01-22
+# Version: 1.1
+# License: GNU General Public License v3.0
+
+
+# Include deb
+- name: Include tasks for Debian/Ubuntu! updated
+  include_tasks: debian.yml
+  when: ansible_os_family == "Debian"
+  tags: [vim, vim_install]
+
+# Include RHEL
+- name: Include tasks for RedHat/RHEL! updated
+  include_tasks: rhel.yml
+  when: ansible_os_family == "RedHat"
+  tags: [vim, vim_install]

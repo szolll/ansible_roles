@@ -1,0 +1,26 @@
+---
+
+# Author: Daniel Sol
+# Date: 2024-01-22
+# Version: 1.1
+# License: GNU General Public License v3.0
+
+# Users who have vim set
+users:
+  - user1
+  - user2
+  - ansible
+
+# Scheme's we support for vim
+schemes:
+  - molokai.vim
+  - hybrid.vim
+  - badwolf.vim
+  - eosz_themed.vim
+
+git_repos:
+  - { repo: 'https://github.com/tomasr/molokai', dest: '/tmp/vim-molokai' }
+  - { repo: 'https://github.com/w0ng/vim-hybrid.git', dest: '/tmp/vim-hybrid' }
+  # <-- additional vim colors -->
+  - { repo: 'https://github.com/gosukiwi/vim-atom-dark.git', dest: '/tmp/vim-atom-dark' }
+  - { repo: 'https://github.com/sjl/badwolf.git', dest: '/tmp/vim-badwolf' }

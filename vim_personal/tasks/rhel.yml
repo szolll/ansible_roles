@@ -1,0 +1,106 @@
+---
+#
+# tasks file for vim_config
+
+# Install Vim to the latest version
+- name: Install required packages
+  package:
+    name: vim
+    state: latest
+  become: true
+  tags: [vim, vim_install]
+
+# Ensure /etc/vim folder exists
+- name: Ensure /etc/vim folder exists
+  file:
+    path: /etc/vim
+    state: directory
+    mode: '0755'
+  become: true
+  tags: [vim, vim_install]
+
+# Ensure user .vim directories for color schemes
+- name: Ensure user .vim directories for color schemes
+  file:
+    path: "/home/{{ item }}/.vim/colors"
+    state: directory
+    owner: "{{ item }}"
+    mode: 0755
+  loop: "{{ users }}"
+  become: true
+  tags: [vim, vim_install]
+
+# Set vimrc from template
+- name: Ensure proper vimrc is set
+  template:
+    src: vimrc.j2
+    dest: /etc/vim/vimrc
+  become: true
+  tags: [vim, vim_install]
+
+# Ensure color schemes are installed for each user
+- name: Ensure color schemes are installed for each user
+  copy:
+    src: "{{ item.1 }}"
+    dest: "/home/{{ item.0 }}/.vim/colors/"
+    owner: "{{ item.0 }}"
+    mode: 0644
+  loop: "{{ users | product(schemes) | list }}"
+  become: true
+  tags: [vim, vim_install]
+
+# Install color schemes system-wide
+- name: Ensure color schemes are available system-wide
+  copy:
+    src: "{{ item }}"
+    dest: "/usr/share/vim/vim81/colors/"
+    owner: root
+    group: root
+    mode: 0644
+  loop: "{{ schemes }}"
+  become: true
+  tags: [vim, vim_install]
+
+# Verify color scheme files exist
+- name: Verify color scheme files exist system-wide
+  stat:
+    path: "/usr/share/vim/vim81/colors/{{ item }}"
+  register: color_scheme_file
+  loop: "{{ schemes }}"
+  failed_when: not color_scheme_file.stat.exists
+  tags: [vim, vim_install]
+
+# Verify color scheme files exist system-wide
+- name: Verify color scheme files exist system-wide
+  stat:
+    path: "/usr/share/vim/vim81/colors/{{ item }}"
+  register: color_scheme_file
+  loop: "{{ schemes }}"
+  tags: [vim, vim_install]
+
+# Output verification result
+- name: Output verification result
+  debug:
+    msg: "{{ item.item }} color scheme file is correctly deployed."
+  loop: "{{ color_scheme_file.results }}"
+  when: item.stat.exists
+  tags: [vim, vim_install]
+
+
+# Validate Vim color schemes
+- name: Validate Vim color schemes
+  command: vim -E -s --cmd "colorscheme {{ item }}" --cmd "quit"
+  loop: "{{ schemes | map('regex_replace', '.vim$', '') | list }}"
+  register: vim_test
+  changed_when: false
+  failed_when: "'E185' in vim_test.stderr"
+  ignore_errors: true
+  tags: [vim, vim_install]
+
+# Report Vim validation results
+- name: Report Vim validation results
+  debug:
+    msg: "Vim color scheme {{ item.item }} loaded successfully."
+  when: item.rc == 0
+  loop: "{{ vim_test.results }}"
+  tags: [vim, vim_install]
