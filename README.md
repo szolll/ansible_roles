@@ -6,6 +6,7 @@ This directory contains various Ansible roles for system configuration:
 
 - **Vim Personal Role**: Configures Vim for personal use, including installation, directory setup, and custom configurations.
 - **ipmi_tools Role**: Manages IPMI (Intelligent Platform Management Interface) tools for server hardware management.
+- **checkmk_smartmonitor_plugin Role**: Manages the smartmonitor and the smartmonitor plugin for checkmk.
 
 **Author**: Daniel Sol  
 
