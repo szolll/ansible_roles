@@ -1,0 +1,15 @@
+---
+# Author: Daniel Sol
+# Date: 2024-01-3
+# Version: 1.0
+# License: GNU General Public License v3.0
+
+# Deploy checkmk's logwatch plugins
+- name: "IPMI Tool vs. Ansible'"
+  hosts: all
+  remote_user: user1
+  gather_facts: yes
+  roles:
+    - ../ipmi_tool
+  vars:
+    - ubuntu_version: "20.04, 22.04"
