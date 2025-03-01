@@ -1,0 +1,15 @@
+---
+# Author: Daniel Sol
+# Date: 2024-01-27
+# Version: 1.0
+# License: GNU General Public License v3.0
+
+# Deploy checkmk's logwatch plugins
+- name: "'Deploy my FAFO vim with Ansible!'"
+  hosts: all
+  remote_user: user1
+  gather_facts: yes
+  roles:
+    - ../checkmk_smartmonitor_plugin
+  vars:
+    - ubuntu_version: "20.04, 22.04"
