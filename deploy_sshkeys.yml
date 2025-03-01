@@ -1,0 +1,54 @@
+---
+#############################################################
+#
+#  Playbook for deploying your ansible users ssh key fast!
+#
+#  Usage: Run the playbook, enter the password and go! 
+#
+#  Author: Daniel Sol
+#
+#############################################################
+
+- name: Deploy SSH key to remote hosts
+  hosts: all
+  gather_facts: false  # We don't need facts for this simple task
+  vars_prompt:
+    - name: ssh_password
+      prompt: "Enter the SSH password for the remote user"
+      private: true
+      when: ansible_ssh_pass is not defined  # Only prompt if ansible_ssh_pass isn't set (e.g., in Tower)
+
+  tasks:
+    - name: Check if SSH key exists on the control node
+      ansible.builtin.stat:
+        path: "~/.ssh/id_rsa.pub"
+      delegate_to: localhost
+      register: ssh_key_stat
+      become: false
+
+    - name: Fail if SSH key does not exist
+      ansible.builtin.fail:
+        msg: "SSH public key not found on the control node at ~/.ssh/id_rsa.pub. Please generate one using 'ssh-keygen'."
+      when: not ssh_key_stat.stat.exists
+
+    - name: Read the SSH public key from the control node
+      ansible.builtin.slurp:
+        src: "~/.ssh/id_rsa.pub"
+      delegate_to: localhost
+      register: ssh_key_content
+      become: false
+
+    - name: Deploy the SSH key to the remote host
+      ansible.posix.authorized_key:
+        user: "{{ ansible_user | default('root') }}"  # Use ansible_user or default to root
+        key: "{{ ssh_key_content.content | b64decode }}"
+        state: present
+      vars:
+        ansible_ssh_pass: "{{ ssh_password | default(ansible_ssh_pass) }}"
+      register: ssh_key_result
+      failed_when: ssh_key_result is failed and 'Permission denied' in ssh_key_result.msg
+
+    - name: Debug SSH key deployment result
+      ansible.builtin.debug:
+        msg: "SSH key deployed successfully to {{ inventory_hostname }}"
+      when: ssh_key_result is changed
