@@ -8,15 +8,15 @@
 #  Author: Daniel Sol
 #
 #############################################################
-
+---
 - name: Deploy SSH key to remote hosts
   hosts: all
   gather_facts: false  # We don't need facts for this simple task
   vars_prompt:
     - name: ssh_password
-      prompt: "Enter the SSH password for the remote user"
+      prompt: "Enter the SSH password for the remote user (leave blank if using AWX credentials)"
       private: true
-      when: ansible_ssh_pass is not defined  # Only prompt if ansible_ssh_pass isn't set (e.g., in Tower)
+      default: ""
 
   tasks:
     - name: Check if SSH key exists on the control node
@@ -44,7 +44,8 @@
         key: "{{ ssh_key_content.content | b64decode }}"
         state: present
       vars:
-        ansible_ssh_pass: "{{ ssh_password | default(ansible_ssh_pass) }}"
+        # Use ansible_ssh_pass if defined (e.g., via AWX credentials), otherwise use prompted ssh_password
+        ansible_ssh_pass: "{{ ansible_ssh_pass | default(ssh_password) }}"
       register: ssh_key_result
       failed_when: ssh_key_result is failed and 'Permission denied' in ssh_key_result.msg
 
