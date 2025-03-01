@@ -8,7 +8,6 @@
 #  Author: Daniel Sol
 #
 #############################################################
----
 - name: Deploy SSH key to remote hosts
   hosts: all
   gather_facts: false  # We don't need facts for this simple task
