@@ -1,28 +1,34 @@
 ---
-#################################################################### 
-#  Install, config impitool and get some data
-
+##################################################### 
+#
+#    Install, config impitool and get some data
+#
+#####################################################
 # Check installed and updated
 - name: Ensure ipmitool is installed and updated
   ansible.builtin.apt:
     pkg:
-    - ipmitool
-    - vim
+      - ipmitool
+      - vim
     state: latest
     update_cache: yes
     cache_valid_time: "{{ apt_update_cache_valid_time | default(3600) }}"
   become: yes
 
 - name: Ensure kernel modules are loaded
-  modprobe: name={{ item }} state=present
-  with_items:
+  ansible.builtin.command: modprobe {{ item }}
+  loop:
     - ipmi_si
     - ipmi_devintf
-  become: yes   
+  become: yes
+  register: modprobe_result
+  failed_when: modprobe_result.rc != 0
 
 - name: Get ipmitool power status
-  command: ipmitool power status
+  ansible.builtin.command: ipmitool power status
   become: yes
+  register: power_status
+  failed_when: power_status.rc != 0
 
 - name: Ensure users ipmitool user list 1
   command: ipmitool user list 1
